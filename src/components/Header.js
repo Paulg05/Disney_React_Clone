@@ -1,36 +1,98 @@
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
+import { useHistory } from "react-router-dom";
+import {
+  selectUserName,
+  selectUserPhoto,
+  setUserLogin,
+  setSignOut,
+} from "../features/movie/user/userSlice";
+import { auth, provider } from "../firebase";
+import { useEffect } from "react";
 
 function Header() {
+  const dispatch = useDispatch();
+  const history = useHistory();
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
+  useEffect(() => {
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        dispatch(
+          setUserLogin({
+            name: user.displayName,
+            email: user.email,
+            photo: user.photoURL,
+          })
+        );
+        history.push("/");
+      }
+    });
+  });
+
+  const signIn = () => {
+    auth.signInWithPopup(provider).then((res) => {
+      let user = res.user;
+      dispatch(
+        setUserLogin({
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL,
+        })
+      );
+      history.push("/");
+    });
+  };
+
+  const signOut = () => {
+    auth.signOut().then(() => {
+      dispatch(setSignOut());
+      history.push("/login");
+    });
+  };
+
   return (
     <Nav>
       <Logo src="/images/logo.svg" />
-      <NavMenu>
-        <a href="home">
-          <img alt="" src="/images/home-icon.svg" />
-          <span>HOME</span>
-        </a>
-        <a href="search">
-          <img alt="" src="/images/search-icon.svg" />
-          <span>SEARCH</span>
-        </a>
-        <a href="watchlist">
-          <img alt="" src="/images/watchlist-icon.svg" />
-          <span>WATCHLIST</span>
-        </a>
-        <a href="originals">
-          <img alt="" src="/images/original-icon.svg" />
-          <span>ORIGINALS</span>
-        </a>
-        <a href="movies">
-          <img alt="" src="/images/movie-icon.svg" />
-          <span>MOVIES</span>
-        </a>
-        <a href="series">
-          <img alt="" src="/images/series-icon.svg" />
-          <span>SERIES</span>
-        </a>
-      </NavMenu>
-      <UserImg src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHhGeJcBYTOsLqPfIdrGL-_bcbLzPGuKqCog&usqp=CAU" />
+      {!userName ? (
+        <LoginContainer>
+          <Login onClick={signIn}>Login</Login>
+        </LoginContainer>
+      ) : (
+        <>
+          <NavMenu>
+            <a href="home">
+              <img alt="" src="/images/home-icon.svg" />
+              <span>HOME</span>
+            </a>
+            <a href="search">
+              <img alt="" src="/images/search-icon.svg" />
+              <span>SEARCH</span>
+            </a>
+            <a href="watchlist">
+              <img alt="" src="/images/watchlist-icon.svg" />
+              <span>WATCHLIST</span>
+            </a>
+            <a href="originals">
+              <img alt="" src="/images/original-icon.svg" />
+              <span>ORIGINALS</span>
+            </a>
+            <a href="movies">
+              <img alt="" src="/images/movie-icon.svg" />
+              <span>MOVIES</span>
+            </a>
+            <a href="series">
+              <img alt="" src="/images/series-icon.svg" />
+              <span>SERIES</span>
+            </a>
+          </NavMenu>
+          <UserImg
+            onClick={signOut}
+            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHhGeJcBYTOsLqPfIdrGL-_bcbLzPGuKqCog&usqp=CAU"
+          />
+        </>
+      )}
     </Nav>
   );
 }
@@ -99,4 +161,28 @@ const UserImg = styled.img`
   height: 48px;
   border-radius: 50%;
   cursor: pointer;
+`;
+
+const Login = styled.div`
+  border: 1px solid #f9f9f9;
+
+  padding: 8px 16px;
+  border-radius: 4px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background-color: rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease 0s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #f9f9f9;
+    color: #000;
+    border-color: transparent;
+  }
+`;
+
+const LoginContainer = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 `;
